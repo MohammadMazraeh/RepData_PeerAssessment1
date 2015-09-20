@@ -1,5 +1,8 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "Mohammad Mazraeh"
+date: "September 21, 2015"
+
 output: 
   html_document:
     keep_md: true
@@ -8,18 +11,79 @@ output:
 
 ## Loading and preprocessing the data
 
+```{r, echo=TRUE}
+library('gridExtra')
+library('ggplot2')
+data <- read.csv('activity.csv',na.strings = 'NA')
+data$date <- as.Date(data$date)
+# data <- data[!is.na(data$steps),]
+head(data)
+```
 
 
 ## What is mean total number of steps taken per day?
-
+```{r, echo=TRUE}
+perDayStep <- tapply(data$steps, INDEX = data$date, sum)
+hist(perDayStep, breaks = 10, ylab = 'Number of Steps', xlab = 'day')
+```
+```{r, echo=TRUE}
+meanValue <- mean(perDayStep, na.rm = TRUE)
+medianValue <- median(perDayStep,na.rm = TRUE)
+print(sprintf('Mean Value: %.2f', meanValue))
+print(sprintf('Median Value: %.2f',medianValue))
+```
 
 
 ## What is the average daily activity pattern?
 
-
+```{r, echo=TRUE}
+avgSteps <- tapply(data$steps, INDEX = data$interval,function (x) mean(x, na.rm = TRUE))
+plot(names(avgSteps), avgSteps,type = 'l', ylab = 'Average Step per in Interval', xlab = 'Interval')
+maxStepID <- which.max(avgSteps)
+maxInterval <- names(avgSteps)[maxStepID]
+print(sprintf('Interval with Maximum Step Average is: %s', maxInterval))
+```
 
 ## Imputing missing values
+```{r, echo=TRUE}
 
+completeCount <- sum(complete.cases(data))
+rowsWithNA <- dim(data)[1] - completeCount
+print(sprintf('Number of Rows with NA: %d', rowsWithNA))
+```
+Fill in NAs with mean value
+```{r, echo=TRUE}
+filledData <- data
+NAsIntervals <- filledData$interval[is.na(filledData$steps)]
+filledData$steps[is.na(filledData$steps)] <- avgSteps[which(NAsIntervals == names(avgSteps))]
+perDayStep <- tapply(filledData$steps, INDEX = filledData$date, sum)
+hist(perDayStep, breaks = 10, ylab = 'Number of Steps', xlab = 'day', main = 'After Imputing NAs')
+```
+We See Imputing Data has not changed the histogram. because each NA value has been   
+replaced by it's interval mean.
+```{r, echo=TRUE}
+meanValue <- mean(perDayStep, na.rm = TRUE)
+medianValue <- median(perDayStep,na.rm = TRUE)
+print(sprintf('Mean Value: %.2f', meanValue))
+print(sprintf('Median Value: %.2f',medianValue))
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r, echo=TRUE}
+perDayStepWeekDay <- tapply(filledData$steps, INDEX = filledData$date, mean)
+df <- data.frame(avg = perDayStep , date = as.Date(names(perDayStepWeekDay)),weekday = weekdays(as.Date(names(perDayStepWeekDay))))
+df$weekend <- df$weekday %in% c('Friday')
+
+dfEnd= df[df$weekend,]
+cs <- complete.cases(dfEnd)
+dfEnd <- dfEnd[cs,]
+dfDay= df[!df$weekend,]
+cs <- complete.cases(dfDay)
+dfDay <- dfDay[cs,]
+p1 <- qplot(dfEnd$date, dfEnd$avg, main = 'Weekend',xlab = 'date', ylab = 'step avg') + geom_line()
+p2<- qplot(dfDay$date, dfDay$avg,main = 'Weekday',xlab = 'date', ylab = 'step avg') + geom_line()
+ grid.arrange(p1,p2,nrow = 2)
+
+```
