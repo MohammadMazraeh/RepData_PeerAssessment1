@@ -204,7 +204,12 @@ hr {
 <h2>Loading and preprocessing the data</h2>
 
 <pre><code class="r">library(&#39;gridExtra&#39;)
-library(&#39;ggplot2&#39;)
+</code></pre>
+
+<pre><code>## Warning: package &#39;gridExtra&#39; was built under R version 3.2.2
+</code></pre>
+
+<pre><code class="r">library(&#39;ggplot2&#39;)
 data &lt;- read.csv(&#39;activity.csv&#39;,na.strings = &#39;NA&#39;)
 data$date &lt;- as.Date(data$date)
 # data &lt;- data[!is.na(data$steps),]
